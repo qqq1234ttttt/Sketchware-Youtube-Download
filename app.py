@@ -15,21 +15,30 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        # အခမဲ့နဲ့ တည်ငြိမ်တဲ့ YouTube Downloader API တစ်ခုကို အသုံးပြုခြင်း
         api_url = f"https://apis.davidcyriltech.my.id/youtube/dl?url={url}"
-        response = requests.get(api_url, timeout=15)
-        res_data = response.json()
+        response = requests.get(api_url, timeout=20)
+        
+        # Response က JSON ဟုတ်မဟုတ် စစ်ဆေးခြင်း
+        try:
+            res_data = response.json()
+        except Exception:
+            # JSON မဟုတ်ဘဲ HTML သို့မဟုတ် Error စာသားဖြစ်နေပါက ဤနေရာမှ ဖမ်းမည်
+            return jsonify({
+                'success': False, 
+                'error': f'API Server Error (Status {response.status_code}): ဆာဗာချိတ်ဆက်၍ မရပါ။'
+            })
 
         if res_data.get('status') == 200 and 'result' in res_data:
             data = res_data['result']
             video_title = data.get('title', 'YouTube Video')
             thumbnail_url = data.get('thumbnail', '')
             
-            # Download link (mp4 format အကောင်းဆုံးကို ယူရန်)
+            # Download link ရယူရန်
             download_url = data.get('download_url', '')
             if not download_url and 'quality' in data:
-                # quality formats ထဲမှ ယူရန်
-                download_url = data.get('quality', [{}])[0].get('url', '')
+                qualities = data.get('quality', [])
+                if qualities:
+                    download_url = qualities[0].get('url', '')
 
             if not download_url:
                 return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
@@ -41,7 +50,7 @@ def get_info():
                 'download_url': download_url,
             })
         else:
-            return jsonify({'success': False, 'error': 'API မှ ဗီဒီယိုအချက်အလက် ရယူ၍မရပါ။'})
+            return jsonify({'success': False, 'error': 'API မှ ဗီဒီယိုအချက်အလက် မရရှိပါ။'})
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
