@@ -17,8 +17,9 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # cookies.txt ကို အသုံးပြုရန် cookiefile ထည့်သွင်းထားပါသည်
+    # format ကို best လို့ သတ်မှတ်ပေးခြင်းဖြင့် Requested format is not available Error ကို ဖြေရှင်းပေးပါသည်
     ydl_opts = {
+        'format': 'best',
         'extract_flat': False,
         'skip_download': True,
         'cookiefile': 'cookies.txt',
@@ -30,30 +31,18 @@ def get_info():
             video_title = info.get('title', 'YouTube Video')
             thumbnail_url = info.get('thumbnail', '')
 
-            # Direct Download stream url ရယူရန် (Format Error မတက်စေရန် အဆင့်ဆင့် စစ်ဆေးခြင်း)
-            formats = info.get('formats', [])
-            best_url = ''
+            # Direct Download stream url ရယူရန်
+            best_url = info.get('url', '')
 
-            # ၁။ ပထမဦးစားပေးအနေဖြင့် mp4 (video + audio ပါပြီးသား) ကို ရှာမည်
-            for f in formats:
-                if (
-                    f.get('ext') == 'mp4'
-                    and f.get('vcodec') != 'none'
-                    and f.get('acodec') != 'none'
-                ):
-                    best_url = f.get('url')
-                    break
-
-            # ၂။ အကယ်၍ မတွေ့ပါက extension မရွေးဘဲ vcodec နဲ့ acodec ရှိသည့် format ကို ရှာမည်
+            # အကယ်၍ info ထဲမှာ url တိုက်ရိုက်မပါလာပါက formats ထဲမှ ရှာမည်
             if not best_url:
+                formats = info.get('formats', [])
                 for f in formats:
                     if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
                         best_url = f.get('url')
                         break
-
-            # ၃။ ဘာမှမတွေ့ပါက ရနိုင်သမျှ ပထမဆုံး format ကို ယူမည်
-            if not best_url and formats:
-                best_url = formats[0].get('url')
+                if not best_url and formats:
+                    best_url = formats[0].get('url')
 
             if not best_url:
                 return jsonify({'success': False, 'error': 'Download ရယူနိုင်သော Format မရှိပါခင်ဗျာ။'})
