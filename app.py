@@ -15,12 +15,13 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        # လက်ရှိအလုပ်လုပ်နေသော Cobalt Public Instance API သို့ ချိတ်ဆက်ခြင်း
-        api_url = "https://co.wuk.sh/api/json"
+        # တရားဝင် Cobalt Official API လိပ်စာသို့ ပြောင်းလဲချိတ်ဆက်ခြင်း
+        api_url = "https://api.cobalt.tools/api/json"
         
         headers = {
             "Accept": "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0"
         }
         payload = {
             "url": url,
@@ -44,7 +45,7 @@ def get_info():
             if not download_url and 'picker' in res_data:
                 picker_items = res_data.get('picker', [])
                 if picker_items:
-                    download_url = picker_items[0].get('url', '')
+                    download_url = picker_items.get('url', '')
 
             if not download_url:
                 return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
