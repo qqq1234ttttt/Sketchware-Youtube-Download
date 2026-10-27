@@ -14,16 +14,17 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # YouTube ၏ Bot restriction ကို ကျော်လွှားရန် ios နှင့် web client ကို အသုံးပြုထားပါသည်
+    # Cookie နှင့်အတူ android/web client ကို အသုံးပြု၍ bot detection ကို ကျော်လွှားရန်
     ydl_opts = {
         'format': 'best',
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'web']
+                'player_client': ['android', 'web']
             }
         },
         'extract_flat': False,
         'skip_download': True,
+        'cookiefile': 'cookies.txt',
         'nocheckcertificate': True,
         'geo_bypass': True,
     }
@@ -36,7 +37,6 @@ def get_info():
 
             best_url = info.get('url', '')
 
-            # URL တိုက်ရိုက်မပါလာပါက formats ထဲမှ ရှာမည်
             if not best_url:
                 formats = info.get('formats', [])
                 for f in formats:
