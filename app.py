@@ -15,36 +15,48 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        api_url = f"https://apis.davidcyriltech.my.id/youtube/dl?url={url}"
+        # လက်ရှိအလုပ်လုပ်နေသော Cobalt Public Instance API သို့ ချိတ်ဆက်ခြင်း
+        api_url = "https://co.wuk.sh/api/json"
         
-        response = requests.get(api_url, timeout=25)
-        
-        # ဆာဗာက Status 200 ဟုတ်မဟုတ် ဦးစွာစစ်ဆေးခြင်း
-        if response.status_code != 200:
-            return jsonify({'success': False, 'error': f'API Server Down (Status {response.status_code})'})
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "url": url,
+            "vQuality": "720"
+        }
 
-        # Response ထဲတွင် ေဒတာအမှန်တကယ် ပါမပါ စစ်ဆေးခြင်း
+        response = requests.post(api_url, json=payload, headers=headers, timeout=25)
+        
+        if response.status_code != 200:
+            return jsonify({'success': False, 'error': f'API Server Error (Status {response.status_code})'})
+
         try:
             res_data = response.json()
         except Exception:
-            return jsonify({'success': False, 'error': 'API မှ JSON ပုံစံဖြင့် တုံ့ပြန်မှု မရှိပါ။ (Server Error)'})
+            return jsonify({'success': False, 'error': 'API မှ Data မှန်ကန်စွာ မပြန်လာပါ။'})
 
-        if res_data and 'status' in res_data and res_data['status'] == 200:
-            result_info = res_data.get('result', {})
-            download_url = result_info.get('download_url', '') or result_info.get('url', '')
-            video_title = result_info.get('title', 'KMT YouTube Download')
+        status = res_data.get('status')
+        if status in ['stream', 'redirect', 'picker']:
+            download_url = res_data.get('url', '')
+            
+            if not download_url and 'picker' in res_data:
+                picker_items = res_data.get('picker', [])
+                if picker_items:
+                    download_url = picker_items[0].get('url', '')
 
             if not download_url:
                 return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
 
             return jsonify({
                 'success': True,
-                'title': video_title,
-                'thumbnail': result_info.get('thumbnail', ''),
+                'title': 'KMT YouTube Download',
+                'thumbnail': '',
                 'download_url': download_url,
             })
         else:
-            err_msg = res_data.get('message', 'ဗီဒီယိုအချက်အလက် ရယူ၍မရပါ။') if isinstance(res_data, dict) else 'Invalid API Response'
+            err_msg = res_data.get('text', 'ဗီဒီယိုလင့်ခ် ရယူ၍မရပါ။')
             return jsonify({'success': False, 'error': f'API Error: {err_msg}'})
 
     except Exception as e:
