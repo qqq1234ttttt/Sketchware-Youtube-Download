@@ -30,9 +30,11 @@ def get_info():
             video_title = info.get('title', 'YouTube Video')
             thumbnail_url = info.get('thumbnail', '')
 
-            # Direct Download stream url ရယူရန်
+            # Direct Download stream url ရယူရန် (Format Error မတက်စေရန် အဆင့်ဆင့် စစ်ဆေးခြင်း)
             formats = info.get('formats', [])
             best_url = ''
+
+            # ၁။ ပထမဦးစားပေးအနေဖြင့် mp4 (video + audio ပါပြီးသား) ကို ရှာမည်
             for f in formats:
                 if (
                     f.get('ext') == 'mp4'
@@ -41,8 +43,20 @@ def get_info():
                 ):
                     best_url = f.get('url')
                     break
+
+            # ၂။ အကယ်၍ မတွေ့ပါက extension မရွေးဘဲ vcodec နဲ့ acodec ရှိသည့် format ကို ရှာမည်
+            if not best_url:
+                for f in formats:
+                    if f.get('vcodec') != 'none' and f.get('acodec') != 'none':
+                        best_url = f.get('url')
+                        break
+
+            # ၃။ ဘာမှမတွေ့ပါက ရနိုင်သမျှ ပထမဆုံး format ကို ယူမည်
             if not best_url and formats:
                 best_url = formats[0].get('url')
+
+            if not best_url:
+                return jsonify({'success': False, 'error': 'Download ရယူနိုင်သော Format မရှိပါခင်ဗျာ။'})
 
             return jsonify({
                 'success': True,
