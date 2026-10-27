@@ -14,12 +14,12 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # Format Error မတက်စေရန် ပေါင်းပြီးသား Single Format များကို ဦးစားပေးရွေးချယ်ခြင်း
+    # Web Client သက်သက်နှင့် Cookie ကို အသုံးပြု၍ 429 နှင့် Bot Error များကို ကျော်လွှားခြင်း
     ydl_opts = {
         'format': '18/22/best[ext=mp4]/best',
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web']
+                'player_client': ['web']
             }
         },
         'extract_flat': False,
