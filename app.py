@@ -2,14 +2,11 @@ import os
 from flask import Flask, jsonify, render_template, request
 from yt_dlp import YoutubeDL
 
-# template_folder='.' ကြောင့် GitHub Root ထဲရှိ index.html ကို တိုက်ရိုက်ဖတ်ယူပါမည်
 app = Flask(__name__, template_folder='.')
-
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
 
 @app.route('/get_info')
 def get_info():
@@ -17,17 +14,19 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # YouTube ၏ Bot Detection ကို ကျော်လွှားရန် android player_client နှင့် format fallback ကို အသုံးပြုထားပါသည်
+    # Bot Detection ကို ကျော်လွှားရန် web နဲ့ android client များကို ပေါင်းစပ်သုံးထားပါသည်
     ydl_opts = {
         'format': 'best/bestvideo+bestaudio',
         'extractor_args': {
             'youtube': {
-                'player_client': ['android']
+                'player_client': ['web', 'android']
             }
         },
         'extract_flat': False,
         'skip_download': True,
         'cookiefile': 'cookies.txt',
+        'nocheckcertificate': True,
+        'geo_bypass': True,
     }
     
     try:
@@ -36,7 +35,6 @@ def get_info():
             video_title = info.get('title', 'YouTube Video')
             thumbnail_url = info.get('thumbnail', '')
 
-            # Direct Download stream url ရယူရန်
             best_url = info.get('url', '')
 
             if not best_url:
@@ -59,7 +57,6 @@ def get_info():
             })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
