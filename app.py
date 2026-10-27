@@ -15,42 +15,47 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        api_url = f"https://apis.davidcyriltech.my.id/youtube/dl?url={url}"
-        response = requests.get(api_url, timeout=20)
+        # တည်ငြိမ်ပြီး အလုပ်လုပ်သော Cobalt API ကို အသုံးပြုခြင်း
+        api_url = "https://api.cobalt.tools/api/json"
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "url": url,
+            "vQuality": "720"  # လိုချင်သော Quality (ဥပမာ- 720p)
+        }
+
+        response = requests.post(api_url, json=payload, headers=headers, timeout=20)
         
-        # Response က JSON ဟုတ်မဟုတ် စစ်ဆေးခြင်း
         try:
             res_data = response.json()
         except Exception:
-            # JSON မဟုတ်ဘဲ HTML သို့မဟုတ် Error စာသားဖြစ်နေပါက ဤနေရာမှ ဖမ်းမည်
-            return jsonify({
-                'success': False, 
-                'error': f'API Server Error (Status {response.status_code}): ဆာဗာချိတ်ဆက်၍ မရပါ။'
-            })
+            return jsonify({'success': False, 'error': f'API Server Error (Status {response.status_code})'})
 
-        if res_data.get('status') == 200 and 'result' in res_data:
-            data = res_data['result']
-            video_title = data.get('title', 'YouTube Video')
-            thumbnail_url = data.get('thumbnail', '')
+        # Cobalt API ရဲ့ Response ပုံစံအရ စစ်ဆေးခြင်း
+        status = res_data.get('status')
+        if status in ['stream', 'redirect', 'picker']:
+            download_url = res_data.get('url', '')
             
-            # Download link ရယူရန်
-            download_url = data.get('download_url', '')
-            if not download_url and 'quality' in data:
-                qualities = data.get('quality', [])
-                if qualities:
-                    download_url = qualities[0].get('url', '')
+            # အကယ်၍ picker ပုံစံဖြစ်နေပါက options များထဲမှ ပထမဆုံး URL ကို ယူမည်
+            if not download_url and 'picker' in res_data:
+                picker_items = res_data.get('picker', [])
+                if picker_items:
+                    download_url = picker_items[0].get('url', '')
 
             if not download_url:
                 return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
 
             return jsonify({
                 'success': True,
-                'title': video_title,
-                'thumbnail': thumbnail_url,
+                'title': 'YouTube Video',
+                'thumbnail': '',
                 'download_url': download_url,
             })
         else:
-            return jsonify({'success': False, 'error': 'API မှ ဗီဒီယိုအချက်အလက် မရရှိပါ။'})
+            err_msg = res_data.get('text', 'ဗီဒီယိုအချက်အလက် ရယူ၍မရပါ။')
+            return jsonify({'success': False, 'error': f'API Error: {err_msg}'})
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
