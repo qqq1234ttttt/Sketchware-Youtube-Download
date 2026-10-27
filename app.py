@@ -14,12 +14,12 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # Web Client သက်သက်နှင့် Cookie ကို အသုံးပြု၍ 429 နှင့် Bot Error များကို ကျော်လွှားခြင်း
+    # n challenge solver နှင့် mweb/ios client ကို အသုံးပြု၍ Bot/Format Error ကို ကျော်လွှားခြင်း
     ydl_opts = {
         'format': '18/22/best[ext=mp4]/best',
         'extractor_args': {
             'youtube': {
-                'player_client': ['web']
+                'player_client': ['mweb', 'ios']
             }
         },
         'extract_flat': False,
