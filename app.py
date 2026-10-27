@@ -14,9 +14,9 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # သင့်ဖိုင်နာမည်အမှန်ဖြစ်သော m.youtube.com_cookies.txt ကို အသုံးပြုထားပါသည်
+    # Format Error မတက်စေရန် ပေါင်းပြီးသား Single Format များကို ဦးစားပေးရွေးချယ်ခြင်း
     ydl_opts = {
-        'format': 'best',
+        'format': '18/22/best[ext=mp4]/best',
         'extractor_args': {
             'youtube': {
                 'player_client': ['android', 'web']
@@ -40,7 +40,7 @@ def get_info():
             if not best_url:
                 formats = info.get('formats', [])
                 for f in formats:
-                    if f.get('url') and f.get('vcodec') != 'none':
+                    if f.get('url') and f.get('vcodec') != 'none' and f.get('acodec') != 'none':
                         best_url = f.get('url')
                         break
                 if not best_url and formats:
