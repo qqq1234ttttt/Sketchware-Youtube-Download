@@ -15,44 +15,46 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        # ArgonFetch Public API Endpoint သို့မဟုတ် Instance ကို ချိတ်ဆက်ခြင်း
-        # (သို့မဟုတ် app.argonfetch.dev ၏ backend API ပုံစံ)
-        api_url = "https://app.argonfetch.dev/api/json" # သို့မဟုတ် ကိုယ်တိုင် Host လုပ်ထားသော URL
-        
+        # ၁။ ပထမအဆင့် - လင့်ခ်ကို ပို့ပြီး Resource Metadata နှင့် Key များကို တောင်းခံခြင်း
+        api_url = f"https://app.argonfetch.dev/api/Fetch/GetResource?url={url}"
         headers = {
             "Accept": "application/json",
-            "Content-Type": "application/json",
             "User-Agent": "Mozilla/5.0"
         }
-        payload = {
-            "url": url
-        }
 
-        response = requests.post(api_url, json=payload, headers=headers, timeout=25)
+        response = requests.get(api_url, headers=headers, timeout=25)
         
         if response.status_code != 200:
             return jsonify({'success': False, 'error': f'API Server Error (Status {response.status_code})'})
 
-        try:
-            res_data = response.json()
-        except Exception:
-            return jsonify({'success': False, 'error': 'API မှ Data မှန်ကန်စွာ မပြန်လာပါ။'})
-
-        # ArgonFetch ၏ Response ပုံစံအတိုင်း Direct Download Link ကို ယူခြင်း
-        download_url = res_data.get('url', '') or res_data.get('download_url', '')
+        res_data = response.json()
         
-        if not download_url and 'picker' in res_data:
-            picker_items = res_data.get('picker', [])
-            if picker_items:
-                download_url = picker_items.get('url', '')
+        video_title = res_data.get('title', 'KMT YouTube Download')
+        thumbnail_url = res_data.get('cover', '') or res_data.get('thumbnail', '')
+
+        # ၂။ ဒုတိယအဆင့် - ရလာသော Renditions များထဲမှ key ကို ယူ၍ Download Stream Link တည်ဆောက်ခြင်း
+        download_url = ''
+        renditions = res_data.get('renditions', []) or res_data.get('formats', [])
+        
+        if isinstance(renditions, list) and len(renditions) > 0:
+            # ပထမဆုံးရတဲ့ item သို့မဟုတ် အသင့်တော်ဆုံး quality ကို ယူခြင်း
+            item = renditions
+            key = item.get('key', '')
+            if key:
+                # Video နဲ့ Audio ပေါင်းပြီးသား Combined Stream လမ်းကြောင်းကို ဖန်တီးခြင်း
+                download_url = f"https://app.argonfetch.dev/api/Stream/Combined/{key}"
+
+        if not download_url:
+            # Fallback အနေဖြင့် တစ်ခြား url ပါလာပါက ယူရန်
+            download_url = res_data.get('url', '')
 
         if not download_url:
             return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
 
         return jsonify({
             'success': True,
-            'title': res_data.get('title', 'KMT YouTube Download'),
-            'thumbnail': res_data.get('thumbnail', ''),
+            'title': video_title,
+            'thumbnail': thumbnail_url,
             'download_url': download_url,
         })
 
