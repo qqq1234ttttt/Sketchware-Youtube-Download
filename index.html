@@ -52,7 +52,7 @@
         }
         input[type="text"] {
             width: 100%;
-            padding: 14px 90px 14px 16px;
+            padding: 14px 70px 14px 16px;
             background: #0B1120;
             border: 1px solid var(--border-color);
             border-radius: 10px;
@@ -76,7 +76,7 @@
             background: #1E293B;
             border: none;
             color: var(--text-muted);
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
@@ -186,8 +186,6 @@
             <input type="text" id="urlInput" placeholder="YouTube Link ထည့်ပါ...">
             <div class="btn-actions">
                 <button class="icon-btn" onclick="pasteText()" title="Paste">Paste</button>
-                <button class="icon-btn" onclick="copyText()" title="Copy">Copy</button>
-                <button class="icon-btn" onclick="clearText()" title="Clear">Clear</button>
             </div>
         </div>
         
@@ -204,7 +202,8 @@
             <img id="vidThumb" class="thumbnail" src="" alt="Thumbnail">
             <div class="video-info">
                 <div id="vidTitle" class="video-title"></div>
-                <a id="downloadLink" href="#" class="download-btn">Download ယူမည်</a>
+                <!-- KMT YouTube Download.mp4 အဖြစ် Download ရရှိစေရန် download attribute ထည့်သွင်းထားသည် -->
+                <a id="downloadLink" href="#" download="KMT YouTube Download.mp4" class="download-btn">Download ယူမည်</a>
             </div>
         </div>
     </div>
@@ -217,18 +216,6 @@
             } catch (err) {
                 alert('Clipboard မှ ဖတ်၍မရပါ။');
             }
-        }
-
-        function copyText() {
-            const input = document.getElementById('urlInput');
-            input.select();
-            document.execCommand('copy');
-        }
-
-        function clearText() {
-            document.getElementById('urlInput').value = '';
-            document.getElementById('resultCard').style.display = 'none';
-            document.getElementById('errorMsg').style.display = 'none';
         }
 
         async function fetchVideoInfo() {
