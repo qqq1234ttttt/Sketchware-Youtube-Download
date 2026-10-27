@@ -19,10 +19,10 @@ def get_info():
 
     # FFmpeg မလိုအပ်ဘဲ အလွယ်တကူ Direct Play လုပ်နိုင်သော single format ကို ယူရန် best သုံးထားပါသည်
     ydl_opts = {
-        'format': 'best',
-        'extract_flat': False,
-        'skip_download': True,
-        'cookiefile': 'cookies.txt',
+    'format': 'bestvideo+bestaudio/best',
+    'extract_flat': False,
+    'skip_download': True,
+    'cookiefile': 'cookies.txt',
     }
     
     try:
