@@ -1,6 +1,6 @@
 import os
-import requests
 from flask import Flask, jsonify, render_template, request
+from yt_dlp import YoutubeDL
 
 app = Flask(__name__, template_folder='.')
 
@@ -14,50 +14,47 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
+    # iOS Client ကို အသုံးပြု၍ Bot Detection နှင့် Format Error များကို ကျော်လွှားခြင်း
+    ydl_opts = {
+        'format': 'best[ext=mp4]/best',
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios']
+            }
+        },
+        'extract_flat': False,
+        'skip_download': True,
+        'nocheckcertificate': True,
+        'geo_bypass': True,
+    }
+    
     try:
-        # ၁။ ပထမအဆင့် - လင့်ခ်ကို ပို့ပြီး Resource Metadata နှင့် Key များကို တောင်းခံခြင်း
-        api_url = f"https://app.argonfetch.dev/api/Fetch/GetResource?url={url}"
-        headers = {
-            "Accept": "application/json",
-            "User-Agent": "Mozilla/5.0"
-        }
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            video_title = info.get('title', 'KMT YouTube Download')
+            thumbnail_url = info.get('thumbnail', '')
 
-        response = requests.get(api_url, headers=headers, timeout=25)
-        
-        if response.status_code != 200:
-            return jsonify({'success': False, 'error': f'API Server Error (Status {response.status_code})'})
+            best_url = info.get('url', '')
 
-        res_data = response.json()
-        
-        video_title = res_data.get('title', 'KMT YouTube Download')
-        thumbnail_url = res_data.get('cover', '') or res_data.get('thumbnail', '')
+            # Direct video stream link မပါလာပါက formats တွေထဲမှ ရွေးထုတ်ခြင်း
+            if not best_url:
+                formats = info.get('formats', [])
+                for f in formats:
+                    if f.get('url') and f.get('vcodec') != 'none' and f.get('acodec') != 'none':
+                        best_url = f.get('url')
+                        break
+                if not best_url and formats:
+                    best_url = formats[0].get('url')
 
-        # ၂။ ဒုတိယအဆင့် - ရလာသော Renditions များထဲမှ key ကို ယူ၍ Download Stream Link တည်ဆောက်ခြင်း
-        download_url = ''
-        renditions = res_data.get('renditions', []) or res_data.get('formats', [])
-        
-        if isinstance(renditions, list) and len(renditions) > 0:
-            # ပထမဆုံးရတဲ့ item သို့မဟုတ် အသင့်တော်ဆုံး quality ကို ယူခြင်း
-            item = renditions
-            key = item.get('key', '')
-            if key:
-                # Video နဲ့ Audio ပေါင်းပြီးသား Combined Stream လမ်းကြောင်းကို ဖန်တီးခြင်း
-                download_url = f"https://app.argonfetch.dev/api/Stream/Combined/{key}"
+            if not best_url:
+                return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
 
-        if not download_url:
-            # Fallback အနေဖြင့် တစ်ခြား url ပါလာပါက ယူရန်
-            download_url = res_data.get('url', '')
-
-        if not download_url:
-            return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
-
-        return jsonify({
-            'success': True,
-            'title': video_title,
-            'thumbnail': thumbnail_url,
-            'download_url': download_url,
-        })
-
+            return jsonify({
+                'success': True,
+                'title': video_title,
+                'thumbnail': thumbnail_url,
+                'download_url': best_url,
+            })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
