@@ -17,14 +17,9 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # Format Error မတက်စေရန် player_client နှင့် format ကို ဖွဲ့စည်းထားပါသည်
+    # FFmpeg မလိုအပ်ဘဲ အလွယ်တကူ Direct Play လုပ်နိုင်သော single format ကို ယူရန် best သုံးထားပါသည်
     ydl_opts = {
-        'format': 'bestvideo+bestaudio/best',
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'web']
-            }
-        },
+        'format': 'best',
         'extract_flat': False,
         'skip_download': True,
         'cookiefile': 'cookies.txt',
