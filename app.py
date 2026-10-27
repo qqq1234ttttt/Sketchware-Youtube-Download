@@ -17,9 +17,14 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # format ကို best လို့ သတ်မှတ်ပေးခြင်းဖြင့် Requested format is not available Error ကို ဖြေရှင်းပေးပါသည်
+    # Format Error မတက်စေရန် player_client နှင့် format ကို ဖွဲ့စည်းထားပါသည်
     ydl_opts = {
-        'format': 'best',
+        'format': 'bestvideo+bestaudio/best',
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web']
+            }
+        },
         'extract_flat': False,
         'skip_download': True,
         'cookiefile': 'cookies.txt',
