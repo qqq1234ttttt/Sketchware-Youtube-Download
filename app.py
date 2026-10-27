@@ -15,8 +15,9 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        # တရားဝင် Cobalt Official API လိပ်စာသို့ ပြောင်းလဲချိတ်ဆက်ခြင်း
-        api_url = "https://api.cobalt.tools/api/json"
+        # ArgonFetch Public API Endpoint သို့မဟုတ် Instance ကို ချိတ်ဆက်ခြင်း
+        # (သို့မဟုတ် app.argonfetch.dev ၏ backend API ပုံစံ)
+        api_url = "https://app.argonfetch.dev/api/json" # သို့မဟုတ် ကိုယ်တိုင် Host လုပ်ထားသော URL
         
         headers = {
             "Accept": "application/json",
@@ -24,8 +25,7 @@ def get_info():
             "User-Agent": "Mozilla/5.0"
         }
         payload = {
-            "url": url,
-            "vQuality": "720"
+            "url": url
         }
 
         response = requests.post(api_url, json=payload, headers=headers, timeout=25)
@@ -38,27 +38,23 @@ def get_info():
         except Exception:
             return jsonify({'success': False, 'error': 'API မှ Data မှန်ကန်စွာ မပြန်လာပါ။'})
 
-        status = res_data.get('status')
-        if status in ['stream', 'redirect', 'picker']:
-            download_url = res_data.get('url', '')
-            
-            if not download_url and 'picker' in res_data:
-                picker_items = res_data.get('picker', [])
-                if picker_items:
-                    download_url = picker_items.get('url', '')
+        # ArgonFetch ၏ Response ပုံစံအတိုင်း Direct Download Link ကို ယူခြင်း
+        download_url = res_data.get('url', '') or res_data.get('download_url', '')
+        
+        if not download_url and 'picker' in res_data:
+            picker_items = res_data.get('picker', [])
+            if picker_items:
+                download_url = picker_items.get('url', '')
 
-            if not download_url:
-                return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
+        if not download_url:
+            return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
 
-            return jsonify({
-                'success': True,
-                'title': 'KMT YouTube Download',
-                'thumbnail': '',
-                'download_url': download_url,
-            })
-        else:
-            err_msg = res_data.get('text', 'ဗီဒီယိုလင့်ခ် ရယူ၍မရပါ။')
-            return jsonify({'success': False, 'error': f'API Error: {err_msg}'})
+        return jsonify({
+            'success': True,
+            'title': res_data.get('title', 'KMT YouTube Download'),
+            'thumbnail': res_data.get('thumbnail', ''),
+            'download_url': download_url,
+        })
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
