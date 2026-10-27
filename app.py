@@ -1,6 +1,6 @@
 import os
+import requests
 from flask import Flask, jsonify, render_template, request
-from yt_dlp import YoutubeDL
 
 app = Flask(__name__, template_folder='.')
 
@@ -14,47 +14,35 @@ def get_info():
     if not url:
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
-    # Cookie နှင့်အတူ android/web client ကို အသုံးပြု၍ bot detection ကို ကျော်လွှားရန်
-    ydl_opts = {
-        'format': 'best',
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'web']
-            }
-        },
-        'extract_flat': False,
-        'skip_download': True,
-        'cookiefile': 'cookies.txt',
-        'nocheckcertificate': True,
-        'geo_bypass': True,
-    }
-    
     try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            video_title = info.get('title', 'YouTube Video')
-            thumbnail_url = info.get('thumbnail', '')
+        # အခမဲ့နဲ့ တည်ငြိမ်တဲ့ YouTube Downloader API တစ်ခုကို အသုံးပြုခြင်း
+        api_url = f"https://apis.davidcyriltech.my.id/youtube/dl?url={url}"
+        response = requests.get(api_url, timeout=15)
+        res_data = response.json()
 
-            best_url = info.get('url', '')
+        if res_data.get('status') == 200 and 'result' in res_data:
+            data = res_data['result']
+            video_title = data.get('title', 'YouTube Video')
+            thumbnail_url = data.get('thumbnail', '')
+            
+            # Download link (mp4 format အကောင်းဆုံးကို ယူရန်)
+            download_url = data.get('download_url', '')
+            if not download_url and 'quality' in data:
+                # quality formats ထဲမှ ယူရန်
+                download_url = data.get('quality', [{}])[0].get('url', '')
 
-            if not best_url:
-                formats = info.get('formats', [])
-                for f in formats:
-                    if f.get('url') and f.get('vcodec') != 'none':
-                        best_url = f.get('url')
-                        break
-                if not best_url and formats:
-                    best_url = formats[0].get('url')
-
-            if not best_url:
-                return jsonify({'success': False, 'error': 'Download ရယူနိုင်သော Link မရှိပါ။'})
+            if not download_url:
+                return jsonify({'success': False, 'error': 'Download Link ရှာမတွေ့ပါ။'})
 
             return jsonify({
                 'success': True,
                 'title': video_title,
                 'thumbnail': thumbnail_url,
-                'download_url': best_url,
+                'download_url': download_url,
             })
+        else:
+            return jsonify({'success': False, 'error': 'API မှ ဗီဒီယိုအချက်အလက် ရယူ၍မရပါ။'})
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
