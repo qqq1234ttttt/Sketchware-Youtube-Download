@@ -15,13 +15,20 @@ def get_info():
         return jsonify({'success': False, 'error': 'Link မပါဝင်ပါ။'})
 
     try:
-        # လက်ရှိအလုပ်လုပ်နေသော Public YouTube Downloader API ကို ချိတ်ဆက်ခြင်း
         api_url = f"https://apis.davidcyriltech.my.id/youtube/dl?url={url}"
         
         response = requests.get(api_url, timeout=25)
-        res_data = response.json()
+        
+        # ဆာဗာက Status 200 ဟုတ်မဟုတ် ဦးစွာစစ်ဆေးခြင်း
+        if response.status_code != 200:
+            return jsonify({'success': False, 'error': f'API Server Down (Status {response.status_code})'})
 
-        # API ရဲ့ Response အခြေအနေကို စစ်ဆေးခြင်း
+        # Response ထဲတွင် ေဒတာအမှန်တကယ် ပါမပါ စစ်ဆေးခြင်း
+        try:
+            res_data = response.json()
+        except Exception:
+            return jsonify({'success': False, 'error': 'API မှ JSON ပုံစံဖြင့် တုံ့ပြန်မှု မရှိပါ။ (Server Error)'})
+
         if res_data and 'status' in res_data and res_data['status'] == 200:
             result_info = res_data.get('result', {})
             download_url = result_info.get('download_url', '') or result_info.get('url', '')
@@ -37,7 +44,7 @@ def get_info():
                 'download_url': download_url,
             })
         else:
-            err_msg = res_data.get('message', 'ဗီဒီယိုအချက်အလက် ရယူ၍မရပါ။')
+            err_msg = res_data.get('message', 'ဗီဒီယိုအချက်အလက် ရယူ၍မရပါ။') if isinstance(res_data, dict) else 'Invalid API Response'
             return jsonify({'success': False, 'error': f'API Error: {err_msg}'})
 
     except Exception as e:
